@@ -1,0 +1,86 @@
+#include <iostream>
+#include <iomanip>
+#include <map>
+#include <vector>
+#include <string>
+#include <sstream>
+using namespace std;
+
+class AdjacencyList {
+public:
+    int powerIterations = 0;
+
+    void addEdge(string from, string to) {
+        adjacencyList[from].push_back(to);
+        if (adjacencyList.find(to) == adjacencyList.end()) {
+            adjacencyList[to] = {};
+        }
+    }
+
+    //Rank(i) = Rank(j)/out_degree(j) + Rank(k)/out_degree(k)
+    void calculateRanks() {
+        double initial = 1.0 / adjacencyList.size();
+
+        //O(V * log(v))
+        for (auto it = adjacencyList.begin(); it != adjacencyList.end(); it++) {
+            ranks[it->first] = initial;
+        }
+
+        //O(P * n * log(V))
+        for (int i = 0; i < powerIterations - 1; i++) {
+            map<string, double> updatedRanks;
+
+            for (auto it = adjacencyList.begin(); it != adjacencyList.end(); it++) { //O(V)
+                string currentPage = it->first;
+                double outRank; //Rank(k)/out_degree(k)
+                if (adjacencyList[currentPage].size() != 0) { //O(log(V))
+                    outRank = ranks[currentPage] / adjacencyList[currentPage].size();
+                } else {
+                    outRank = ranks[currentPage];
+                }
+
+                for (int j = 0; j < it->second.size(); j++) { //O
+                    string destinationPage = it->second[j];
+                    updatedRanks[destinationPage] += outRank;
+                }
+            }
+
+            for (auto it = ranks.begin(); it != ranks.end(); it++) {
+                it->second = updatedRanks[it->first];
+            }
+        }
+    }
+
+    void printRanks() {
+        for (auto it = ranks.begin(); it != ranks.end(); it++) {
+            cout << it->first << " " << fixed << setprecision(2) << it->second << endl;
+        }
+    }
+
+    //Function for testing
+    string test(string s) {
+        istringstream input(s);
+        int numEdges;
+        input >> numEdges >> powerIterations;
+
+        string from;
+        string to;
+        for (int i = 0; i < numEdges; i++) {
+            input >> from >> to;
+            addEdge(from, to);
+        }
+
+        calculateRanks();
+
+        ostringstream output;
+        for (auto i = ranks.begin(); i != ranks.end(); i++) {
+            output << '\n' << i->first << " " << fixed << setprecision(2) << i->second;
+        }
+        return output.str().substr(1);
+    }
+
+private:
+    map<string, vector<string>> adjacencyList;
+    map<string, double> ranks;
+};
+
